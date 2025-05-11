@@ -25,11 +25,15 @@ public class BugServiceImpl implements BugService {
 	private final DtoConverter dtoConverter;
 	private final DeveloperService developerService;
 
+	private Bug fetchBugById(long id) {
+		return bugRepository.findById(id)
+				.orElseThrow(() -> new ResourceNotFoundException("Bug not found for bug id :: " + id));
+	}
+
 	@Override
 	public BugDTO getBugById(long id) {
 		log.debug("Fetching bug by id: {}", id);
-		Bug bug = bugRepository.findById(id)
-				.orElseThrow(() -> new ResourceNotFoundException("Bug not found for bug id :: " + id));
+		Bug bug = fetchBugById(id);
 		return dtoConverter.convert(bug, BugDTO.class);
 	}
 
@@ -44,24 +48,40 @@ public class BugServiceImpl implements BugService {
 	public BugDTO addBug(BugDTO bugDto) {
 		log.debug("Adding new bug: {}", bugDto);
 		Bug bug = dtoConverter.convert(bugDto, Bug.class);
-		if (bugDto.getDeveloperId() != 0) {
-			Developer developer = developerService.fetchDeveloperById(bugDto.getDeveloperId());
-			bug.setAssignee(developer);
-		}
+		updateDeveloper(bugDto, bug);
 		Bug saved = bugRepository.save(bug);
 		log.info("Bug created with id: {}", saved.getId());
 		return dtoConverter.convert(saved, BugDTO.class);
 	}
 
+	private void updateDeveloper(BugDTO bugDto, Bug bug) {
+		if (bugDto.getDeveloperId() != 0) {
+			Developer developer = developerService.fetchDeveloperById(bugDto.getDeveloperId());
+			bug.setAssignee(developer);
+		}
+	}
+
 	@Override
 	public BugDTO updateBug(long id, BugDTO updatedBug) {
 		log.debug("Updating bug with id: {}", id);
-		if (!checkBugExists(id)) {
-			log.warn("Bug not found for update with id: {}", id);
-			throw new ResourceNotFoundException("Bug not found for Bug id :: " + id);
+		Bug bug = fetchBugById(id);
+		updateDeveloper(updatedBug, bug);
+		if (updatedBug.getDescription() != null) {
+			bug.setDescription(updatedBug.getDescription());
 		}
-		Bug bug = dtoConverter.convert(updatedBug, Bug.class);
-		bug.setId(id);
+
+		if (updatedBug.getPriority() != null) {
+			bug.setPriority(updatedBug.getPriority());
+		}
+
+		if (updatedBug.getTitle() != null) {
+			bug.setTitle(updatedBug.getTitle());
+		}
+
+		if (updatedBug.getStatus() != null) {
+			bug.setStatus(updatedBug.getStatus());
+		}
+
 		Bug saved = bugRepository.save(bug);
 		log.info("Bug updated with id: {}", saved.getId());
 		return dtoConverter.convert(saved, BugDTO.class);
