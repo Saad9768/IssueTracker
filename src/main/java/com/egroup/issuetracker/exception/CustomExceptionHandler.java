@@ -20,7 +20,7 @@ import lombok.extern.slf4j.Slf4j;
 public class CustomExceptionHandler {
 
 	@ExceptionHandler(ResourceNotFoundException.class)
-	public ResponseEntity<Object> handleRecordSizeException(ResourceNotFoundException ex) {
+	public ResponseEntity<Object> handleResourceNotFound(ResourceNotFoundException ex) {
 		return new ResponseEntity<>(getBody(HttpStatus.NOT_FOUND, ex, ex.getMessage()), new HttpHeaders(),
 				HttpStatus.NOT_FOUND);
 	}
@@ -63,8 +63,6 @@ public class CustomExceptionHandler {
 
 	public Map<String, Object> getBody(HttpStatus status, Exception ex, String message) {
 
-//		log.error(message, ex);
-
 		System.out.println(message);
 
 		System.out.println(ex);
@@ -74,12 +72,7 @@ public class CustomExceptionHandler {
 		body.put("timestamp", new Date());
 		body.put("status", status.value());
 		body.put("error", status.getReasonPhrase());
-//		body.put("exception", ex.toString());
 
-//		Throwable cause = ex.getCause();
-//		if (cause != null) {
-//			body.put("exceptionCause", ex.getCause().toString());
-//		}
 		return body;
 	}
 

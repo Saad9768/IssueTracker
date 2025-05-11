@@ -1,5 +1,6 @@
 package com.egroup.issuetracker.entity;
 
+import com.egroup.issuetracker.dto.Priority;
 import com.egroup.issuetracker.dto.Status;
 
 import jakarta.persistence.Column;
@@ -22,10 +23,6 @@ import lombok.ToString;
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
 public class Bug extends Issue {
-
-	public enum Priority {
-		CRITICAL, MAJOR, MINOR
-	}
 
 	@NotNull(message = "Priority is required")
 	@Enumerated(EnumType.STRING)
