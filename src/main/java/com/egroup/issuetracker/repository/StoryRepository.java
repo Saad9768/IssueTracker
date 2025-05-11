@@ -11,7 +11,7 @@ import org.springframework.stereotype.Repository;
 import com.egroup.issuetracker.dto.Status;
 import com.egroup.issuetracker.entity.Story;
 
-//@Repository
+@Repository
 public interface StoryRepository extends JpaRepository<Story, Long> {
 	List<Story> findByStatusNot(Status status);
 
