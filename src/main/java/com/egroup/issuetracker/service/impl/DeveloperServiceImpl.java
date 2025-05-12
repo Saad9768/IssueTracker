@@ -55,22 +55,14 @@ public class DeveloperServiceImpl implements DeveloperService {
 		return dtoConverter.convert(saved, DeveloperDTO.class);
 	}
 
-	private boolean checkDeveloperExists(long id) {
-		boolean exists = developerRepository.existsById(id);
-		log.debug("Checking if developer exists with id {}: {}", id, exists);
-		return exists;
-	}
-
 	@Override
 	public DeveloperDTO updateDeveloper(long id, DeveloperDTO updatedDeveloper) {
 		log.info("Updating developer with id: {}", id);
-		if (!checkDeveloperExists(id)) {
-			log.warn("Developer not found for update with id: {}", id);
-			throw new ResourceNotFoundException("Developer not found for developer id :: " + id);
+		Developer developer = fetchDeveloperById(id);
+		if (updatedDeveloper.getName() != null) {
+			developer.setName(updatedDeveloper.getName());
 		}
-		Developer dev = dtoConverter.convert(updatedDeveloper, Developer.class);
-		dev.setId(id);
-		Developer updated = developerRepository.save(dev);
+		Developer updated = developerRepository.save(developer);
 		log.debug("Developer updated with id: {}", updated.getId());
 		return dtoConverter.convert(updated, DeveloperDTO.class);
 	}
@@ -78,12 +70,18 @@ public class DeveloperServiceImpl implements DeveloperService {
 	@Override
 	public boolean deleteDeveloper(long id) {
 		log.info("Deleting developer with id: {}", id);
-		if (developerRepository.existsById(id)) {
+		if (checkDeveloperExists(id)) {
 			developerRepository.deleteById(id);
 			log.info("Developer deleted with id: {}", id);
 			return true;
 		}
 		log.warn("Developer not found for deletion with id: {}", id);
 		return false;
+	}
+
+	private boolean checkDeveloperExists(long id) {
+		boolean exists = developerRepository.existsById(id);
+		log.debug("Checking if developer exists with id {}: {}", id, exists);
+		return exists;
 	}
 }

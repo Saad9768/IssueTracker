@@ -27,13 +27,17 @@ public class StoryServiceImpl implements StoryService {
 	private final DtoConverter dtoConverter;
 	private final DeveloperService developerService;
 
-	@Override
-	public StoryDTO getStoryById(long id) {
-		logger.info("Fetching story with ID: {}", id);
-		Story story = storyRepository.findById(id).orElseThrow(() -> {
+	private Story fetchStoryByStoryId(long id) {
+		return storyRepository.findById(id).orElseThrow(() -> {
 			logger.warn("Story not found for ID: {}", id);
 			return new ResourceNotFoundException("Story not found for story id :: " + id);
 		});
+	}
+
+	@Override
+	public StoryDTO getStoryById(long id) {
+		logger.info("Fetching story with ID: {}", id);
+		Story story = fetchStoryByStoryId(id);
 		logger.debug("Fetched story: {}", story);
 		return dtoConverter.convert(story, StoryDTO.class);
 	}
@@ -50,24 +54,42 @@ public class StoryServiceImpl implements StoryService {
 	public StoryDTO addStory(StoryDTO storyDto) {
 		logger.info("Adding new story with title: {}", storyDto.getTitle());
 		Story story = dtoConverter.convert(storyDto, Story.class);
-		if (storyDto.getDeveloperId() != 0) {
-			Developer developer = developerService.fetchDeveloperById(storyDto.getDeveloperId());
-			story.setAssignee(developer);
-		}
+		updateDeveloper(storyDto, story);
 		Story saved = storyRepository.save(story);
 		logger.debug("Story added with ID: {}", saved.getId());
 		return dtoConverter.convert(saved, StoryDTO.class);
 	}
 
+	private void updateDeveloper(StoryDTO storyDto, Story story) {
+		if (storyDto.getDeveloperId() != 0) {
+			Developer developer = developerService.fetchDeveloperById(storyDto.getDeveloperId());
+			story.setAssignee(developer);
+		}
+	}
+
 	@Override
 	public StoryDTO updateStory(long id, StoryDTO updatedStory) {
 		logger.info("Updating story with ID: {}", id);
-		if (!checkStoryExists(id)) {
-			logger.warn("Attempted to update non-existent story with ID: {}", id);
-			throw new ResourceNotFoundException("Story not found for story id :: " + id);
+
+		Story story = fetchStoryByStoryId(id);
+
+		updateDeveloper(updatedStory, story);
+
+		if (updatedStory.getTitle() != null) {
+			story.setTitle(updatedStory.getTitle());
 		}
-		Story story = dtoConverter.convert(updatedStory, Story.class);
-		story.setId(id);
+
+		if (updatedStory.getStatus() != null) {
+			story.setStatus(updatedStory.getStatus());
+		}
+
+		if (updatedStory.getEstimatedPoints() != null) {
+			story.setEstimatedPoints(updatedStory.getEstimatedPoints());
+		}
+
+		if (updatedStory.getDescription() != null) {
+			story.setDescription(updatedStory.getDescription());
+		}
 		Story updated = storyRepository.save(story);
 		logger.debug("Story updated: {}", updated);
 		return dtoConverter.convert(updated, StoryDTO.class);
